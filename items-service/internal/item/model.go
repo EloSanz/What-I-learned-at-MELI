@@ -1,0 +1,18 @@
+package item
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// Item representa el modelo de dominio de un Producto/Item en Mercado Libre
+type Item struct {
+	ID        string         `gorm:"primaryKey;type:varchar(50)" json:"id"`
+	Title     string         `gorm:"type:varchar(255);not null" json:"title"`
+	Price     float64        `gorm:"type:numeric(12,2);not null" json:"price"`
+	Stock     int            `gorm:"type:integer;not null;default:0" json:"stock"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+}

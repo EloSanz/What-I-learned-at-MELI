@@ -1,0 +1,138 @@
+name: meli
+
+services:
+  # Base de datos PostgreSQL
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: meli-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgrespassword
+      - POSTGRES_DB=meli_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d meli_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  # Microservicio de Items en Go
+  items-service:
+    build:
+      context: ./items-service
+      dockerfile: Dockerfile
+    image: meli-items
+    container_name: meli-items
+    environment:
+      - DB_HOST=postgres-db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgrespassword
+      - DB_NAME=meli_db
+      - DB_PORT=5432
+      - DB_SSLMODE=disable
+      - PORT=8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  # Microservicio de Órdenes en Go
+  orders-service:
+    build:
+      context: ./orders-service
+      dockerfile: Dockerfile
+    image: meli-orders
+    container_name: meli-orders
+    environment:
+      - DB_HOST=postgres-db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgrespassword
+      - DB_NAME=meli_db
+      - DB_PORT=5432
+      - DB_SSLMODE=disable
+      - PORT=8082
+      - ITEMS_SERVICE_URL=http://items-service:8081
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      items-service:
+        condition: service_started
+
+  # Instancia A de FastAPI (Gateway)
+  gateway-a:
+    build:
+      context: ./balancer-demo
+      dockerfile: Dockerfile
+    image: meli-gateway
+    container_name: meli-gateway-a
+    environment:
+      - INSTANCE_NAME=Instancia-A
+      - ORDERS_SERVICE_URL=http://orders-service:8082
+    expose:
+      - "8000"
+
+  # Instancia B de FastAPI (Gateway)
+  gateway-b:
+    build:
+      context: ./balancer-demo
+      dockerfile: Dockerfile
+    image: meli-gateway
+    container_name: meli-gateway-b
+    environment:
+      - INSTANCE_NAME=Instancia-B
+      - ORDERS_SERVICE_URL=http://orders-service:8082
+    expose:
+      - "8000"
+
+  # Nginx Load Balancer
+  balancer:
+    image: nginx:alpine
+    container_name: meli-balancer
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./balancer-demo/nginx.docker.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - gateway-a
+      - gateway-b
+
+  # Motor de base de datos de logs (Loki)
+  loki:
+    image: grafana/loki:latest
+    container_name: meli-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  # Agente recolector de logs (Promtail)
+  promtail:
+    image: grafana/promtail:latest
+    container_name: meli-promtail
+    volumes:
+      - ./logging/promtail-config.yaml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+
+  # Visualizador de logs y métricas (Grafana)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: meli-grafana
+    ports:
+      - "8003:3000"
+    volumes:
+      - ./logging/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+      - ./logging/dashboard-provider.yaml:/etc/grafana/provisioning/dashboards/dashboard-provider.yaml:ro
+      - ./logging/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - loki
+
+volumes:
+  postgres_data:
