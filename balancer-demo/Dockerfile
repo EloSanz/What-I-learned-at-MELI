@@ -1,17 +1,18 @@
 FROM ghcr.io/astral-sh/uv:python3.12-alpine
 WORKDIR /app
 
-# Copiamos archivos de configuración de dependencias
+# Copy dependency config files
 COPY pyproject.toml uv.lock ./
 
-# Sincronizamos las dependencias
+# Sync dependencies
 RUN uv sync --frozen --no-dev
 
-# Copiamos el código de la aplicación
-COPY main.py .
+# Copy application code
+COPY app/ ./app/
 
-# Añadimos el entorno virtual al PATH para ejecutar uvicorn directamente
+# Add virtual env to PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Comando por defecto para correr FastAPI
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Default command to run FastAPI
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+

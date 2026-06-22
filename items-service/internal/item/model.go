@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Item representa el modelo de dominio de un Producto/Item en Mercado Libre
+// Item represents the domain model of a Product/Item in Mercado Libre
 type Item struct {
 	ID        string         `gorm:"primaryKey;type:varchar(50)" json:"id"`
 	Title     string         `gorm:"type:varchar(255);not null" json:"title"`

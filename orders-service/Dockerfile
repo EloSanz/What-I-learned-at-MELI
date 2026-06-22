@@ -1,28 +1,28 @@
-# Etapa de compilación
+# Build stage
 FROM golang:alpine AS builder
 WORKDIR /app
 
-# Copiamos el descriptor de dependencias
+# Copy the dependency descriptor
 COPY go.mod ./
 
-# Descargamos dependencias
+# Download dependencies
 RUN go mod download
 
-# Copiamos el código
+# Copy source code
 COPY . .
 
-# Compilamos el binario de Go
+# Compile the Go binary
 RUN CGO_ENABLED=0 GOOS=linux go build -o orders-api cmd/api/main.go
 
-# Etapa final súper ligera
+# Super lightweight final stage
 FROM alpine:3.19
 WORKDIR /app
 
-# Copiamos el binario compilado
+# Copy the compiled binary
 COPY --from=builder /app/orders-api .
 
-# Exponemos el puerto de escucha
+# Expose the listening port
 EXPOSE 8082
 
-# Ejecutamos el microservicio
+# Execute the microservice
 CMD ["./orders-api"]

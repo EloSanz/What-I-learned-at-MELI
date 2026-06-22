@@ -21,12 +21,12 @@ type repository struct {
 	db *gorm.DB
 }
 
-// NewRepository crea una nueva instancia del repositorio de items
+// NewRepository creates a new instance of the items repository
 func NewRepository(db *gorm.DB) Repository {
 	return &repository{db: db}
 }
 
-// FindByID busca un item por su ID primario
+// FindByID retrieves an item by its primary ID
 func (r *repository) FindByID(id string) (*Item, error) {
 	var item Item
 	err := r.db.First(&item, "id = ?", id).Error
@@ -39,11 +39,11 @@ func (r *repository) FindByID(id string) (*Item, error) {
 	return &item, nil
 }
 
-// DecrementStock reduce el stock de un item en la base de datos dentro de una transacción
+// DecrementStock reduces the stock of an item in the database within a transaction
 func (r *repository) DecrementStock(id string, quantity int) (*Item, error) {
 	var item Item
 	err := r.db.Transaction(func(tx *gorm.DB) error {
-		// Buscamos el item y bloqueamos la fila para escritura (Select for Update)
+		// Find the item and lock the row for writing (Select for Update)
 		if err := tx.Set("gorm:query_option", "FOR UPDATE").First(&item, "id = ?", id).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return ErrItemNotFound
@@ -51,12 +51,12 @@ func (r *repository) DecrementStock(id string, quantity int) (*Item, error) {
 			return err
 		}
 
-		// Validamos stock
+		// Validate stock
 		if item.Stock < quantity {
 			return ErrOutOfStock
 		}
 
-		// Descontamos stock
+		// Decrement stock
 		item.Stock -= quantity
 		if err := tx.Save(&item).Error; err != nil {
 			return err

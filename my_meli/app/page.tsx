@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 
 export default function Home() {
-  // Estados para simular la interactividad
+  // Interactive states
   const [cartCount, setCartCount] = useState(3);
   const [selectedQty, setSelectedQty] = useState(1);
   const [activeTab, setActiveTab] = useState(0); // 0 = Imagen Principal
@@ -14,16 +14,16 @@ export default function Home() {
   const [showToast, setShowToast] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState('tarjeta-mp');
 
-  // Datos fijos del producto
+  // Hardcoded product data
   const productPrice = 619999;
   const originalPrice = 774999;
   const productName = "Monitor gamer curvo Xiaomi Gaming G34WQi LCD negro";
 
-  // Simulación de envío del evento de compra al API Gateway
+  // E2E purchase event simulation to API Gateway
   const handleConfirmPurchase = async () => {
     setLoadingStep(1); // Inicia pantalla de carga
 
-    // Simular un retardo para dar sensación de procesamiento real
+    // Simulate processing delay
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     const purchasePayload = {
@@ -37,7 +37,7 @@ export default function Home() {
     };
 
     try {
-      // Intentamos enviar el evento al puerto de Nginx (8080)
+      // Send event to Nginx port (8080)
       const response = await fetch('http://localhost:8080/gateway', {
         method: 'POST',
         headers: {
@@ -63,7 +63,7 @@ export default function Home() {
     setLoadingStep(2); // Muestra pantalla de éxito
   };
 
-  // Función para agregar al carrito
+  // Add to cart handler
   const handleAddToCart = () => {
     setCartCount(prev => prev + selectedQty);
     setShowToast(true);

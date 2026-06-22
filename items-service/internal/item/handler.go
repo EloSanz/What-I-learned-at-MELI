@@ -17,7 +17,7 @@ func NewHandler(repo Repository) *Handler {
 	return &Handler{repo: repo}
 }
 
-// GetByID maneja la obtención de un item por ID
+// GetByID handles retrieving an item by ID
 // GET /api/items/:id
 func (h *Handler) GetByID(c *gin.Context) {
 	id := c.Param("id")
@@ -43,7 +43,7 @@ type ValidateStockRequest struct {
 	Quantity int `json:"quantity" binding:"required,min=1"`
 }
 
-// ValidateAndReserveStock valida la existencia del item y descuenta stock
+// ValidateAndReserveStock validates item existence and reserves stock
 // POST /api/items/:id/validate
 func (h *Handler) ValidateAndReserveStock(c *gin.Context) {
 	id := c.Param("id")

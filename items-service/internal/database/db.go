@@ -9,33 +9,24 @@ import (
 	"gorm.io/gorm"
 )
 
-// ConnectDB inicializa la conexión con la base de datos PostgreSQL
-func ConnectDB() (*gorm.DB, error) {
-	host := os.Getenv("DB_HOST")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbname := os.Getenv("DB_NAME")
-	port := os.Getenv("DB_PORT")
-	sslmode := os.Getenv("DB_SSLMODE")
+// getEnv retrieves the value of the environment variable named by the key.
+// It returns the fallback value if the variable is not present or is empty.
+func getEnv(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
+}
 
-	if host == "" {
-		host = "localhost"
-	}
-	if user == "" {
-		user = "postgres"
-	}
-	if password == "" {
-		password = "postgrespassword"
-	}
-	if dbname == "" {
-		dbname = "meli_db"
-	}
-	if port == "" {
-		port = "5432"
-	}
-	if sslmode == "" {
-		sslmode = "disable"
-	}
+// ConnectDB initializes the PostgreSQL database connection
+func ConnectDB() (*gorm.DB, error) {
+	host := getEnv("DB_HOST", "localhost")
+	user := getEnv("DB_USER", "postgres")
+
+	password := getEnv("DB_PASSWORD", "")
+	dbname := getEnv("DB_NAME", "meli_db")
+	port := getEnv("DB_PORT", "5432")
+	sslmode := getEnv("DB_SSLMODE", "disable")
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		host, user, password, dbname, port, sslmode,

@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Instancia A de FastAPI
+  # FastAPI Instance A
   gateway-a:
     build: .
     environment:
@@ -9,7 +9,7 @@ services:
     expose:
       - "8000"
 
-  # Instancia B de FastAPI
+  # FastAPI Instance B
   gateway-b:
     build: .
     environment:
@@ -17,7 +17,7 @@ services:
     expose:
       - "8000"
 
-  # Servidor Nginx que balancea el tráfico
+  # Nginx Load Balancer
   balancer:
     image: nginx:alpine
     ports:

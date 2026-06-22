@@ -7,15 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// InitRouter configura las rutas del servidor Gin para el microservicio de órdenes
+// InitRouter configures Gin server routes for the orders microservice
 func InitRouter(orderHandler *order.Handler) *gin.Engine {
 	r := gin.New()
 
-	// Middlewares por defecto
+	// Default middlewares
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 
-	// Agrupamos todas las rutas bajo /api/orders
+	// Group all routes under /api/orders
 	apiOrders := r.Group("/api/orders")
 	{
 		apiOrders.GET("/health", func(c *gin.Context) {

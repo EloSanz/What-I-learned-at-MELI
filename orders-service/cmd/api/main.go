@@ -10,34 +10,24 @@ import (
 	"syscall"
 	"time"
 
-	"orders-service/internal/api"
+	"orders-service/internal/bootstrap"
 	"orders-service/internal/database"
-	"orders-service/internal/order"
 )
 
 func main() {
 	slog.Info("Starting Go Orders Service...")
 
-	// 1. Conectar a PostgreSQL
+	// 1. Connect to PostgreSQL
 	db, err := database.ConnectDB()
 	if err != nil {
 		slog.Error("Could not initialize database connection", "error", err)
 		os.Exit(1)
 	}
 
-	// 2. Auto-migración del esquema de GORM
-	slog.Info("Running database schema auto-migrations...")
-	if err := db.AutoMigrate(&order.Order{}); err != nil {
-		slog.Error("Database migration failed", "error", err)
-		os.Exit(1)
-	}
+	// 2. Initialize application dependencies and routing (DI Container)
+	router := bootstrap.InitApp(db)
 
-	// 3. Inicializar capas de la aplicación
-	orderRepo := order.NewRepository(db)
-	orderHandler := order.NewHandler(orderRepo)
-	router := api.InitRouter(orderHandler)
-
-	// 4. Configurar Servidor HTTP con Graceful Shutdown
+	// 3. Setup HTTP server with Graceful Shutdown
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8082"
@@ -48,7 +38,7 @@ func main() {
 		Handler: router,
 	}
 
-	// Ejecutar servidor en una goroutine
+	// Run server in a goroutine
 	go func() {
 		slog.Info("Orders Service is running", "port", port)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -57,12 +47,13 @@ func main() {
 		}
 	}()
 
-	// Capturar señales de detención para apagado seguro
+	// 4. Capture stop signals for graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	slog.Info("Shutting down orders service server gracefully...")
 
+	// Allow up to 10 seconds to finish active requests
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

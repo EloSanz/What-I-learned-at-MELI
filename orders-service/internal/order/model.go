@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Estados posibles de una Orden
+// Possible Order statuses
 const (
 	StatusPending        = "PENDING"
 	StatusReadyToProcess = "READY_TO_PROCESS"
@@ -16,7 +16,7 @@ const (
 	StatusFailed         = "FAILED"
 )
 
-// Order representa el modelo de una compra en el sistema
+// Order represents the model of a purchase in the system
 type Order struct {
 	ID        string         `gorm:"primaryKey;type:varchar(50)" json:"id"`
 	UserID    string         `gorm:"type:varchar(100);not null" json:"user_id"`
@@ -30,7 +30,7 @@ type Order struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
-// GenerateUUID genera un identificador único aleatorio (versión básica v4) sin dependencias
+// GenerateUUID generates a random unique identifier (basic v4) without dependencies
 func GenerateUUID() string {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)

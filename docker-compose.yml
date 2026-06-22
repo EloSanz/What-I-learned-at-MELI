@@ -1,7 +1,7 @@
 name: meli
 
 services:
-  # Base de datos PostgreSQL
+  # PostgreSQL Database
   postgres-db:
     image: postgres:16-alpine
     container_name: meli-db
@@ -13,13 +13,14 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d meli_db"]
       interval: 3s
       timeout: 3s
       retries: 5
 
-  # Microservicio de Items en Go
+  # Items Service (Go)
   items-service:
     build:
       context: ./items-service
@@ -40,7 +41,7 @@ services:
       postgres-db:
         condition: service_healthy
 
-  # Microservicio de Órdenes en Go
+  # Orders Service (Go)
   orders-service:
     build:
       context: ./orders-service
@@ -64,7 +65,7 @@ services:
       items-service:
         condition: service_started
 
-  # Instancia A de FastAPI (Gateway)
+  # Gateway Instance A (FastAPI)
   gateway-a:
     build:
       context: ./balancer-demo
@@ -77,7 +78,7 @@ services:
     expose:
       - "8000"
 
-  # Instancia B de FastAPI (Gateway)
+  # Gateway Instance B (FastAPI)
   gateway-b:
     build:
       context: ./balancer-demo
@@ -102,7 +103,7 @@ services:
       - gateway-a
       - gateway-b
 
-  # Motor de base de datos de logs (Loki)
+  # Log Database (Loki)
   loki:
     image: grafana/loki:latest
     container_name: meli-loki
@@ -110,7 +111,7 @@ services:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
 
-  # Agente recolector de logs (Promtail)
+  # Log Collector (Promtail)
   promtail:
     image: grafana/promtail:latest
     container_name: meli-promtail
@@ -121,7 +122,7 @@ services:
     depends_on:
       - loki
 
-  # Visualizador de logs y métricas (Grafana)
+  # Metrics & Logs Viewer (Grafana)
   grafana:
     image: grafana/grafana:latest
     container_name: meli-grafana

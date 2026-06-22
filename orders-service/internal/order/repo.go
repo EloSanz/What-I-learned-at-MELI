@@ -22,12 +22,12 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db: db}
 }
 
-// Create inserta una nueva orden en la base de datos
+// Create inserts a new order into the database
 func (r *repository) Create(order *Order) error {
 	return r.db.Create(order).Error
 }
 
-// FindByID busca una orden por su identificador primario
+// FindByID retrieves an order by its primary identifier
 func (r *repository) FindByID(id string) (*Order, error) {
 	var ord Order
 	err := r.db.First(&ord, "id = ?", id).Error
@@ -40,7 +40,7 @@ func (r *repository) FindByID(id string) (*Order, error) {
 	return &ord, nil
 }
 
-// UpdateStatus actualiza el estado de una orden específica
+// UpdateStatus updates the status of a specific order
 func (r *repository) UpdateStatus(id string, status string) error {
 	result := r.db.Model(&Order{}).Where("id = ?", id).Update("status", status)
 	if result.Error != nil {

@@ -9,23 +9,23 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  # Recolector automático para todos los contenedores Docker mediante el Socket de Docker
+  # Auto-discover Docker containers via socket
   - job_name: docker-containers
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
     relabel_configs:
-      # Ignorar contenedores de infraestructura (Loki, Promtail, Grafana)
+      # Ignore infrastructure containers
       - source_labels: ['__meta_docker_container_name']
         regex: '/meli-(loki|promtail|grafana)'
         action: drop
-      # Renombrar la etiqueta del contenedor para que sea legible
+      # Rename container label for readability
       - source_labels: ['__meta_docker_container_name']
         regex: '/(.*)'
         target_label: 'job'
-      # Capturar si el log es de stdout o stderr
+      # Capture stdout/stderr stream
       - source_labels: ['__meta_docker_container_log_stream']
         target_label: 'stream'
-      # Capturar el nombre del servicio en docker-compose
+      # Capture docker-compose service name
       - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
         target_label: 'service'

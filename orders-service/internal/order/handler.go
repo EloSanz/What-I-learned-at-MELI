@@ -35,7 +35,7 @@ func NewHandler(repo Repository) *Handler {
 	}
 }
 
-// ItemResponseData mapea la sección de datos recibida desde items-service
+// ItemResponseData maps the data section received from items-service
 type ItemResponseData struct {
 	ID    string  `json:"id"`
 	Title string  `json:"title"`
@@ -43,7 +43,7 @@ type ItemResponseData struct {
 	Stock int     `json:"stock"`
 }
 
-// ItemsServiceResponse mapea la respuesta completa de items-service
+// ItemsServiceResponse maps the full response from items-service
 type ItemsServiceResponse struct {
 	Status  string           `json:"status"`
 	Data    ItemResponseData `json:"data"`
@@ -58,7 +58,7 @@ type CreateOrderRequest struct {
 	Address  string  `json:"address" binding:"required"`
 }
 
-// CreateOrder maneja la creación de una orden y valida el item/stock con items-service
+// CreateOrder handles order creation and validates item/stock with items-service
 // POST /api/orders
 func (h *Handler) CreateOrder(c *gin.Context) {
 	var req CreateOrderRequest
@@ -103,7 +103,7 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 	web.JSON(c, http.StatusCreated, ord, "Order generated successfully")
 }
 
-// GetByID busca una orden por ID
+// GetByID retrieves an order by ID
 // GET /api/orders/:id
 func (h *Handler) GetByID(c *gin.Context) {
 	id := c.Param("id")
@@ -129,7 +129,7 @@ type UpdateStatusRequest struct {
 	Status string `json:"status" binding:"required"`
 }
 
-// UpdateStatus permite cambiar el estado de la orden (usado por el orquestador)
+// UpdateStatus allows changing the order status (used by the orchestrator)
 // PUT /api/orders/:id/status
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	id := c.Param("id")
@@ -144,7 +144,7 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 		return
 	}
 
-	// Validar que sea un estado admitido
+	// Validate allowed statuses
 	if req.Status != StatusPending && req.Status != StatusReadyToProcess && req.Status != StatusCompleted && req.Status != StatusFailed {
 		web.Error(c, http.StatusBadRequest, "Invalid order status value")
 		return
@@ -163,7 +163,7 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 	web.JSON(c, http.StatusOK, gin.H{"id": id, "status": req.Status}, "Order status updated successfully")
 }
 
-// Helper para llamar por HTTP al microservicio de items
+// Helper to call the items microservice via HTTP
 func (h *Handler) checkItemAvailability(itemID string) (*ItemResponseData, error) {
 	url := fmt.Sprintf("%s/api/items/%s", h.itemsServiceURL, itemID)
 	resp, err := h.httpClient.Get(url)

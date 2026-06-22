@@ -10,39 +10,24 @@ import (
 	"syscall"
 	"time"
 
-	"items-service/internal/api"
+	"items-service/internal/bootstrap"
 	"items-service/internal/database"
-	"items-service/internal/item"
-
-	"gorm.io/gorm"
 )
 
 func main() {
 	slog.Info("Starting Go Items Service...")
 
-	// 1. Conectar a PostgreSQL
+	// 1. Connect to PostgreSQL
 	db, err := database.ConnectDB()
 	if err != nil {
 		slog.Error("Could not initialize database connection", "error", err)
 		os.Exit(1)
 	}
 
-	// 2. Ejecutar Auto-migración del esquema de GORM
-	slog.Info("Running database schema auto-migrations...")
-	if err := db.AutoMigrate(&item.Item{}); err != nil {
-		slog.Error("Database migration failed", "error", err)
-		os.Exit(1)
-	}
+	// 2. Initialize application dependencies and routing (DI Container)
+	router := bootstrap.InitApp(db)
 
-	// 3. Sembrar datos por defecto si la tabla está vacía
-	seedDefaultItems(db)
-
-	// 4. Inicializar capas de Clean Architecture
-	itemRepo := item.NewRepository(db)
-	itemHandler := item.NewHandler(itemRepo)
-	router := api.InitRouter(itemHandler)
-
-	// 5. Configurar Servidor HTTP con Graceful Shutdown
+	// 3. Setup HTTP server with Graceful Shutdown
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8081"
@@ -53,22 +38,22 @@ func main() {
 		Handler: router,
 	}
 
-	// Corremos el servidor en una goroutine para no bloquear el hilo principal
+	// Run server in a goroutine
 	go func() {
-		slog.Info("Server is running", "port", port)
+		slog.Info("Items Server is running", "port", port)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("ListenAndServe failed", "error", err)
 			os.Exit(1)
 		}
 	}()
 
-	// Esperamos señales del sistema operativo para apagar el servidor de forma segura
+	// Wait for OS signals for graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	slog.Info("Shutting down items service server gracefully...")
 
-	// Damos un tiempo de tolerancia de 10 segundos para finalizar peticiones en curso
+	// Allow up to 10 seconds to finish active requests
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -78,24 +63,4 @@ func main() {
 	}
 
 	slog.Info("Items service server exited cleanly")
-}
-
-// seedDefaultItems inserta el monitor de prueba si la base de datos no tiene registros
-func seedDefaultItems(db *gorm.DB) {
-	var count int64
-	db.Model(&item.Item{}).Count(&count)
-	if count == 0 {
-		slog.Info("Seeding default item for Mercado Libre simulation...")
-		defaultMonitor := item.Item{
-			ID:    "MLA43960787",
-			Title: "Monitor gamer curvo Xiaomi Gaming G34WQi LCD negro",
-			Price: 619999.00,
-			Stock: 55, // Stock inicial para simular compras
-		}
-		if err := db.Create(&defaultMonitor).Error; err != nil {
-			slog.Warn("Failed to seed default item", "error", err)
-		} else {
-			slog.Info("Default item seeded successfully (ID: MLA43960787, Stock: 55)")
-		}
-	}
 }
