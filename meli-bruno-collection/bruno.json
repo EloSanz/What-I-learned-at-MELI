@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Meli API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

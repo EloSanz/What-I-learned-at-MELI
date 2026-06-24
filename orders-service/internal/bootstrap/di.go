@@ -16,7 +16,8 @@ func InitApp(db *gorm.DB) *gin.Engine {
 	// 1. Order Domain Injection
 	// ==========================================
 	orderRepo := order.NewRepository(db)
-	orderHandler := order.NewHandler(orderRepo)
+	orderService := order.NewService(orderRepo)
+	orderHandler := order.NewHandler(orderService)
 
 	// ==========================================
 	// 2. Future Domains

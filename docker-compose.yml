@@ -7,15 +7,15 @@ services:
     container_name: meli-db
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgrespassword
-      - POSTGRES_DB=meli_db
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres/init-multi-db.sh:/docker-entrypoint-initdb.d/init-multi-db.sh
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d meli_db"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
       interval: 3s
       timeout: 3s
       retries: 5
@@ -26,17 +26,16 @@ services:
       context: ./items-service
       dockerfile: Dockerfile
     image: meli-items
-    container_name: meli-items
     environment:
       - DB_HOST=postgres-db
       - DB_USER=postgres
       - DB_PASSWORD=postgrespassword
-      - DB_NAME=meli_db
+      - DB_NAME=items_db
       - DB_PORT=5432
       - DB_SSLMODE=disable
-      - PORT=8081
-    ports:
-      - "8081:8081"
+      - PORT=80
+    deploy:
+      replicas: 2
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -47,23 +46,33 @@ services:
       context: ./orders-service
       dockerfile: Dockerfile
     image: meli-orders
-    container_name: meli-orders
     environment:
       - DB_HOST=postgres-db
       - DB_USER=postgres
       - DB_PASSWORD=postgrespassword
-      - DB_NAME=meli_db
+      - DB_NAME=orders_db
       - DB_PORT=5432
       - DB_SSLMODE=disable
-      - PORT=8082
-      - ITEMS_SERVICE_URL=http://items-service:8081
-    ports:
-      - "8082:8082"
+      - PORT=80
+      - ITEMS_SERVICE_URL=http://internal-balancer
+    deploy:
+      replicas: 2
     depends_on:
       postgres-db:
         condition: service_healthy
-      items-service:
-        condition: service_started
+
+  # Auth Service (Go)
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    image: meli-auth
+    container_name: meli-auth
+    environment:
+      - PORT=8083
+      - JWT_SECRET=supersecretmelikey
+    ports:
+      - "8083:8083"
 
   # Gateway Instance A (FastAPI)
   gateway-a:
@@ -74,7 +83,8 @@ services:
     container_name: meli-gateway-a
     environment:
       - INSTANCE_NAME=Instancia-A
-      - ORDERS_SERVICE_URL=http://orders-service:8082
+      - ORDERS_SERVICE_URL=http://internal-balancer
+      - ITEMS_SERVICE_URL=http://internal-balancer
     expose:
       - "8000"
 
@@ -87,11 +97,22 @@ services:
     container_name: meli-gateway-b
     environment:
       - INSTANCE_NAME=Instancia-B
-      - ORDERS_SERVICE_URL=http://orders-service:8082
+      - ORDERS_SERVICE_URL=http://internal-balancer
+      - ITEMS_SERVICE_URL=http://internal-balancer
     expose:
       - "8000"
 
-  # Nginx Load Balancer
+  # Internal Load Balancer
+  internal-balancer:
+    image: nginx:alpine
+    container_name: meli-internal-balancer
+    volumes:
+      - ./internal-balancer/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - orders-service
+      - items-service
+
+  # Nginx Edge Balancer
   balancer:
     image: nginx:alpine
     container_name: meli-balancer
@@ -102,6 +123,8 @@ services:
     depends_on:
       - gateway-a
       - gateway-b
+      - auth-service
+      - internal-balancer
 
   # Log Database (Loki)
   loki:
@@ -134,6 +157,18 @@ services:
       - ./logging/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - loki
+
+  # pgAdmin (Database UI)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: meli-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: postgres
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres-db
 
 volumes:
   postgres_data:

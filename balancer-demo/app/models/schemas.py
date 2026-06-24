@@ -12,8 +12,22 @@ class PurchaseEvent(BaseModel):
     """
     event: str = Field(..., description="The type of event, e.g., 'buy_now'")
     user: str = Field(..., description="ID of the user making the purchase")
-    item: str = Field(..., description="ID of the product being purchased")
+    item_id: str = Field(..., description="ID of the product being purchased")
     quantity: int = Field(..., description="Number of units bought", gt=0)
     address: SecretStr = Field(..., description="User's shipping address. Obfuscated in logs using SecretStr for privacy.")
     amount: float = Field(..., description="Total price of the purchase in local currency")
     timestamp: str = Field(..., description="ISO 8601 timestamp of the transaction")
+
+class OrderPayloadDTO(BaseModel):
+    user_id: str
+    item_id: str
+    quantity: int
+    amount: float
+    address: str
+
+class OrderResponseDTO(BaseModel):
+    status: str | None = None
+    processed_by: str | None = None
+    event_id: str | int | None = None
+    message: str | None = None
+    error: str | None = None

@@ -10,11 +10,11 @@ import (
 )
 
 type Handler struct {
-	repo Repository
+	service Service
 }
 
-func NewHandler(repo Repository) *Handler {
-	return &Handler{repo: repo}
+func NewHandler(service Service) *Handler {
+	return &Handler{service: service}
 }
 
 // GetByID handles retrieving an item by ID
@@ -26,7 +26,7 @@ func (h *Handler) GetByID(c *gin.Context) {
 		return
 	}
 
-	item, err := h.repo.FindByID(id)
+	item, err := h.service.GetByID(id)
 	if err != nil {
 		if errors.Is(err, ErrItemNotFound) {
 			web.Error(c, http.StatusNotFound, "Item not found")
@@ -37,10 +37,6 @@ func (h *Handler) GetByID(c *gin.Context) {
 	}
 
 	web.JSON(c, http.StatusOK, item, "Item retrieved successfully")
-}
-
-type ValidateStockRequest struct {
-	Quantity int `json:"quantity" binding:"required,min=1"`
 }
 
 // ValidateAndReserveStock validates item existence and reserves stock
@@ -58,7 +54,7 @@ func (h *Handler) ValidateAndReserveStock(c *gin.Context) {
 		return
 	}
 
-	item, err := h.repo.DecrementStock(id, req.Quantity)
+	item, err := h.service.ValidateAndReserveStock(id, req.Quantity)
 	if err != nil {
 		if errors.Is(err, ErrItemNotFound) {
 			web.Error(c, http.StatusNotFound, "Item not found")

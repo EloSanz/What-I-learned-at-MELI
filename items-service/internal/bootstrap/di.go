@@ -16,7 +16,8 @@ func InitApp(db *gorm.DB) *gin.Engine {
 	// 1. Item Domain Injection
 	// ==========================================
 	itemRepo := item.NewRepository(db)
-	itemHandler := item.NewHandler(itemRepo)
+	itemService := item.NewService(itemRepo)
+	itemHandler := item.NewHandler(itemService)
 
 	// ==========================================
 	// 2. Future Domains (Users, Reviews, etc.)

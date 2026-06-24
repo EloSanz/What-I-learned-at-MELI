@@ -1,0 +1,29 @@
+meta {
+  name: Create Order
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/gateway/orders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "event": "buy_now",
+    "user": "U123",
+    "item_id": "MLA43960787",
+    "quantity": 1,
+    "amount": 619999,
+    "address": "Calle Falsa 123",
+    "timestamp": "2026-06-24T12:00:00Z"
+  }
+  
+  
+}

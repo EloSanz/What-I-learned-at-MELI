@@ -36,3 +36,30 @@ func GenerateUUID() string {
 	_, _ = rand.Read(b)
 	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
+
+// ItemResponseData maps the data section received from items-service
+type ItemResponseData struct {
+	ID    string  `json:"id"`
+	Title string  `json:"title"`
+	Price float64 `json:"price"`
+	Stock int     `json:"stock"`
+}
+
+// ItemsServiceResponse maps the full response from items-service
+type ItemsServiceResponse struct {
+	Status  string           `json:"status"`
+	Data    ItemResponseData `json:"data"`
+	Message string           `json:"message"`
+}
+
+type CreateOrderRequest struct {
+	UserID   string  `json:"user_id" binding:"required"`
+	ItemID   string  `json:"item_id" binding:"required"`
+	Quantity int     `json:"quantity" binding:"required,min=1"`
+	Amount   float64 `json:"amount" binding:"required,gt=0"`
+	Address  string  `json:"address" binding:"required"`
+}
+
+type UpdateStatusRequest struct {
+	Status string `json:"status" binding:"required"`
+}

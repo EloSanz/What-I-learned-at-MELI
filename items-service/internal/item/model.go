@@ -16,3 +16,7 @@ type Item struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
+
+type ValidateStockRequest struct {
+	Quantity int `json:"quantity" binding:"required,min=1"`
+}
