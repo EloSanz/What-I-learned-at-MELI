@@ -170,5 +170,18 @@ services:
     depends_on:
       - postgres-db
 
+  # MCP Logs Server
+  mcp-logs:
+    build:
+      context: ./mcp-logs
+      dockerfile: Dockerfile
+    container_name: meli-mcp-logs
+    environment:
+      - LOKI_URL=http://loki:3100
+    ports:
+      - "8005:8000"
+    depends_on:
+      - loki
+
 volumes:
   postgres_data:
