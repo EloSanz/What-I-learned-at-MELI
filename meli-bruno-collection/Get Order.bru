@@ -1,7 +1,7 @@
 meta {
   name: Get Order
   type: http
-  seq: 4
+  seq: 5
 }
 
 get {
@@ -10,10 +10,10 @@ get {
   auth: bearer
 }
 
-auth:bearer {
-  token: {{token}}
-}
-
 params:path {
   id: 41600633-b260-0dbf-29d6-d97283fa0a92
+}
+
+auth:bearer {
+  token: {{token}}
 }

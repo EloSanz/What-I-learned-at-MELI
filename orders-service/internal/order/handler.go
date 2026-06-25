@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"orders-service/internal/infra"
 	"orders-service/pkg/web"
 
 	"github.com/gin-gonic/gin"
@@ -86,6 +87,11 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 		}
 		if errors.Is(err, ErrInvalidOrderStatus) {
 			web.Error(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, infra.ErrResourceLocked) {
+			slog.Warn("Resource locked, skipping event", "order_id", id)
+			web.Error(c, http.StatusUnprocessableEntity, "Resource is locked")
 			return
 		}
 		web.Error(c, http.StatusInternalServerError, err.Error())

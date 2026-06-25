@@ -1,0 +1,17 @@
+meta {
+  name: Update Order Status (Lock Test)
+  type: http
+  seq: 8
+}
+
+put {
+  url: http://localhost:8084/api/orders/e0dc12aa-0a56-42bb-902f-b413ed46b9a2/status
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "status": "COMPLETED"
+  }
+}

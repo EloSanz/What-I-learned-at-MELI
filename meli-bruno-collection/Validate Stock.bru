@@ -1,0 +1,17 @@
+meta {
+  name: Validate Stock (Lock Test)
+  type: http
+  seq: 6
+}
+
+post {
+  url: http://localhost:8081/api/items/MLA43960787/validate
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "quantity": 1
+  }
+}

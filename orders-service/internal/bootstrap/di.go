@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"orders-service/internal/api"
+	"orders-service/internal/infra"
 	"orders-service/internal/order"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +16,9 @@ func InitApp(db *gorm.DB) *gin.Engine {
 	// ==========================================
 	// 1. Order Domain Injection
 	// ==========================================
+	lockService := infra.NewPGLockService(db)
 	orderRepo := order.NewRepository(db)
-	orderService := order.NewService(orderRepo)
+	orderService := order.NewService(orderRepo, lockService)
 	orderHandler := order.NewHandler(orderService)
 
 	// ==========================================

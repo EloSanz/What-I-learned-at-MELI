@@ -2,8 +2,10 @@ package item
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
+	"items-service/internal/infra"
 	"items-service/pkg/web"
 
 	"github.com/gin-gonic/gin"
@@ -62,6 +64,11 @@ func (h *Handler) ValidateAndReserveStock(c *gin.Context) {
 		}
 		if errors.Is(err, ErrOutOfStock) {
 			web.Error(c, http.StatusUnprocessableEntity, "Insufficient stock available for this purchase")
+			return
+		}
+		if errors.Is(err, infra.ErrResourceLocked) {
+			slog.Warn("Resource locked, skipping validation", "item_id", id)
+			web.Error(c, http.StatusUnprocessableEntity, "Resource is locked")
 			return
 		}
 		web.Error(c, http.StatusInternalServerError, err.Error())

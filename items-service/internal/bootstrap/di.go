@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"items-service/internal/api"
+	"items-service/internal/infra"
 	"items-service/internal/item"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +16,9 @@ func InitApp(db *gorm.DB) *gin.Engine {
 	// ==========================================
 	// 1. Item Domain Injection
 	// ==========================================
+	lockService := infra.NewPGLockService(db)
 	itemRepo := item.NewRepository(db)
-	itemService := item.NewService(itemRepo)
+	itemService := item.NewService(itemRepo, lockService)
 	itemHandler := item.NewHandler(itemService)
 
 	// ==========================================

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"orders-service/internal/infra"
 	"os"
 	"time"
 )
@@ -24,11 +25,12 @@ type Service interface {
 
 type service struct {
 	repo            Repository
+	lockService     infra.LockService
 	itemsServiceURL string
 	httpClient      *http.Client
 }
 
-func NewService(repo Repository) Service {
+func NewService(repo Repository, lockService infra.LockService) Service {
 	itemsURL := os.Getenv("ITEMS_SERVICE_URL")
 	if itemsURL == "" {
 		itemsURL = "http://localhost:8081"
@@ -36,6 +38,7 @@ func NewService(repo Repository) Service {
 
 	return &service{
 		repo:            repo,
+		lockService:     lockService,
 		itemsServiceURL: itemsURL,
 		httpClient: &http.Client{
 			Timeout: 5 * time.Second,
@@ -82,7 +85,9 @@ func (s *service) UpdateStatus(id, status string) error {
 		return ErrInvalidOrderStatus
 	}
 
-	return s.repo.UpdateStatus(id, status)
+	return s.lockService.WithLock(id, func() error {
+		return s.repo.UpdateStatus(id, status)
+	})
 }
 
 func (s *service) checkItemAvailability(itemID string) (*ItemResponseData, error) {
