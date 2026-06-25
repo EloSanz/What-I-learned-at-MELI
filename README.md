@@ -50,6 +50,10 @@ Estos servicios corren en Go y no están expuestos directamente al público en l
   - *User:* `postgres`
   - *Password:* `postgrespassword`
   - *Bases lógicas:* `items_db` y `orders_db`
+- **RabbitMQ Dashboard:** [http://localhost:15672](http://localhost:15672)
+  - *User:* `user`
+  - *Password:* `password`
+  - *Nota:* Acá podés ver en tiempo real cómo viajan los mensajes asincrónicos entre `orders-service` y `items-service`.
 - **Loki & Promtail (Logging):** Corriendo en background recolectando logs de todos los contenedores para mostrarlos en Grafana.
 
 ---

@@ -9,7 +9,10 @@ require (
 	gorm.io/gorm v1.31.1
 )
 
-require gorm.io/driver/postgres v1.6.0 // indirect
+require (
+	github.com/rabbitmq/amqp091-go v1.12.0 // indirect
+	gorm.io/driver/postgres v1.6.0 // indirect
+)
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect

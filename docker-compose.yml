@@ -31,6 +31,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=postgrespassword
       - DB_NAME=items_db
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
       - DB_PORT=5432
       - DB_SSLMODE=disable
       - PORT=80
@@ -41,6 +42,23 @@ services:
     depends_on:
       postgres-db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Orders Service (Go)
   orders-service:
@@ -53,10 +71,11 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=postgrespassword
       - DB_NAME=orders_db
+      - ITEMS_SERVICE_URL=http://internal-balancer:80
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
       - DB_PORT=5432
       - DB_SSLMODE=disable
       - PORT=80
-      - ITEMS_SERVICE_URL=http://internal-balancer
     ports:
       - "8084-8085:80"
     deploy:

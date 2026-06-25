@@ -1,14 +1,13 @@
 package order
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
-	"net/http"
+
+	"github.com/user/meli-sdk/broker"
 	"github.com/user/meli-sdk/lock"
-	"os"
-	"time"
 )
 
 var (
@@ -24,39 +23,20 @@ type Service interface {
 }
 
 type service struct {
-	repo            Repository
-	lockService     lock.Service
-	itemsServiceURL string
-	httpClient      *http.Client
+	repo        Repository
+	lockService lock.Service
+	rabbitMQ    *broker.RabbitMQ
 }
 
-func NewService(repo Repository, lockService lock.Service) Service {
-	itemsURL := os.Getenv("ITEMS_SERVICE_URL")
-	if itemsURL == "" {
-		itemsURL = "http://localhost:8081"
-	}
-
+func NewService(repo Repository, lockService lock.Service, rabbitMQ *broker.RabbitMQ) Service {
 	return &service{
-		repo:            repo,
-		lockService:     lockService,
-		itemsServiceURL: itemsURL,
-		httpClient: &http.Client{
-			Timeout: 5 * time.Second,
-		},
+		repo:        repo,
+		lockService: lockService,
+		rabbitMQ:    rabbitMQ,
 	}
 }
 
 func (s *service) CreateOrder(req CreateOrderRequest) (*Order, error) {
-	slog.Info("Validating Item in items-service", "item_id", req.ItemID, "quantity", req.Quantity)
-	itemDetail, err := s.checkItemAvailability(req.ItemID)
-	if err != nil {
-		slog.Error("Item validation failed", "error", err)
-		return nil, fmt.Errorf("%w: %v", ErrItemValidationFailed, err)
-	}
-
-	if itemDetail.Stock < req.Quantity {
-		return nil, fmt.Errorf("%w. Available: %d, Requested: %d", ErrInsufficientStock, itemDetail.Stock, req.Quantity)
-	}
 
 	ord := Order{
 		ID:       GenerateUUID(),
@@ -65,14 +45,24 @@ func (s *service) CreateOrder(req CreateOrderRequest) (*Order, error) {
 		Quantity: req.Quantity,
 		Amount:   req.Amount,
 		Address:  req.Address,
-		Status:   StatusReadyToProcess,
+		Status:   StatusPending,
 	}
 
 	if err := s.repo.Create(&ord); err != nil {
 		return nil, fmt.Errorf("failed to persist order: %w", err)
 	}
 
-	slog.Info("Order successfully created", "order_id", ord.ID, "status", ord.Status)
+	// Publish async event to RabbitMQ
+	event := map[string]interface{}{
+		"order_id": ord.ID,
+		"item_id":  ord.ItemID,
+		"quantity": ord.Quantity,
+	}
+	if err := s.rabbitMQ.Publish(context.Background(), "order.created", event); err != nil {
+		slog.Error("Failed to publish order.created event", "order_id", ord.ID, "error", err)
+	}
+
+	slog.Info("Order successfully created and queued for processing", "order_id", ord.ID, "status", ord.Status)
 	return &ord, nil
 }
 
@@ -90,30 +80,4 @@ func (s *service) UpdateStatus(id, status string) error {
 	})
 }
 
-func (s *service) checkItemAvailability(itemID string) (*ItemResponseData, error) {
-	url := fmt.Sprintf("%s/api/items/%s", s.itemsServiceURL, itemID)
-	resp, err := s.httpClient.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("items-service is unreachable: %w", err)
-	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, errors.New("the requested item does not exist")
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("items-service returned status code %d", resp.StatusCode)
-	}
-
-	var response ItemsServiceResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("failed to decode response payload: %w", err)
-	}
-
-	if response.Status != "success" {
-		return nil, errors.New("failed response status from items-service")
-	}
-
-	return &response.Data, nil
-}
