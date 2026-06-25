@@ -23,8 +23,8 @@ services:
   # Items Service (Go)
   items-service:
     build:
-      context: ./items-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: items-service/Dockerfile
     image: meli-items
     environment:
       - DB_HOST=postgres-db
@@ -45,8 +45,8 @@ services:
   # Orders Service (Go)
   orders-service:
     build:
-      context: ./orders-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: orders-service/Dockerfile
     image: meli-orders
     environment:
       - DB_HOST=postgres-db

@@ -5,10 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"orders-service/internal/infra"
-	"orders-service/pkg/web"
-
 	"github.com/gin-gonic/gin"
+	"github.com/user/meli-sdk/lock"
+	"orders-service/pkg/web"
 )
 
 type Handler struct {
@@ -89,7 +88,7 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 			web.Error(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if errors.Is(err, infra.ErrResourceLocked) {
+		if errors.Is(err, lock.ErrResourceLocked) {
 			slog.Warn("Resource locked, skipping event", "order_id", id)
 			web.Error(c, http.StatusUnprocessableEntity, "Resource is locked")
 			return

@@ -5,10 +5,10 @@ import (
 	"log/slog"
 	"net/http"
 
-	"items-service/internal/infra"
 	"items-service/pkg/web"
 
 	"github.com/gin-gonic/gin"
+	"github.com/user/meli-sdk/lock"
 )
 
 type Handler struct {
@@ -66,7 +66,7 @@ func (h *Handler) ValidateAndReserveStock(c *gin.Context) {
 			web.Error(c, http.StatusUnprocessableEntity, "Insufficient stock available for this purchase")
 			return
 		}
-		if errors.Is(err, infra.ErrResourceLocked) {
+		if errors.Is(err, lock.ErrResourceLocked) {
 			slog.Warn("Resource locked, skipping validation", "item_id", id)
 			web.Error(c, http.StatusUnprocessableEntity, "Resource is locked")
 			return

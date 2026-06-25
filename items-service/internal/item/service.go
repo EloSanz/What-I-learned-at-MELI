@@ -1,7 +1,7 @@
 package item
 
 import (
-	"items-service/internal/infra"
+	"github.com/user/meli-sdk/lock"
 )
 
 type Service interface {
@@ -11,10 +11,10 @@ type Service interface {
 
 type service struct {
 	repo        Repository
-	lockService infra.LockService
+	lockService lock.Service
 }
 
-func NewService(repo Repository, lockService infra.LockService) Service {
+func NewService(repo Repository, lockService lock.Service) Service {
 	return &service{
 		repo:        repo,
 		lockService: lockService,

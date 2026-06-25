@@ -1,0 +1,8 @@
+.git
+.vscode
+.idea
+my_meli/node_modules
+my_meli/.next
+mcp-logs/.venv
+__pycache__
+postgres/

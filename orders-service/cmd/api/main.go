@@ -11,14 +11,17 @@ import (
 	"time"
 
 	"orders-service/internal/bootstrap"
-	"orders-service/internal/database"
+
+	"github.com/user/meli-sdk/config"
+	"github.com/user/meli-sdk/database"
 )
 
 func main() {
 	slog.Info("Starting Go Orders Service...")
 
-	// 1. Connect to PostgreSQL
-	db, err := database.ConnectDB()
+	// 1. Load config and Connect to PostgreSQL
+	cfg, _ := config.LoadDBConfig("config.json")
+	db, err := database.Connect(cfg)
 	if err != nil {
 		slog.Error("Could not initialize database connection", "error", err)
 		os.Exit(1)

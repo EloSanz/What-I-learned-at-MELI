@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"orders-service/internal/infra"
+	"github.com/user/meli-sdk/lock"
 	"os"
 	"time"
 )
@@ -25,12 +25,12 @@ type Service interface {
 
 type service struct {
 	repo            Repository
-	lockService     infra.LockService
+	lockService     lock.Service
 	itemsServiceURL string
 	httpClient      *http.Client
 }
 
-func NewService(repo Repository, lockService infra.LockService) Service {
+func NewService(repo Repository, lockService lock.Service) Service {
 	itemsURL := os.Getenv("ITEMS_SERVICE_URL")
 	if itemsURL == "" {
 		itemsURL = "http://localhost:8081"

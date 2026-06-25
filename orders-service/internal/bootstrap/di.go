@@ -2,8 +2,9 @@ package bootstrap
 
 import (
 	"orders-service/internal/api"
-	"orders-service/internal/infra"
 	"orders-service/internal/order"
+
+	"github.com/user/meli-sdk/lock"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -16,7 +17,7 @@ func InitApp(db *gorm.DB) *gin.Engine {
 	// ==========================================
 	// 1. Order Domain Injection
 	// ==========================================
-	lockService := infra.NewPGLockService(db)
+	lockService := lock.NewPGLockService(db)
 	orderRepo := order.NewRepository(db)
 	orderService := order.NewService(orderRepo, lockService)
 	orderHandler := order.NewHandler(orderService)
